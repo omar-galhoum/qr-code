@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<script>
+  // Applied before first paint so the page never flashes the wrong theme.
+  (function () {
+    var stored = null;
+    try { stored = localStorage.getItem('qr-theme'); } catch (e) {}
+    var theme = stored
+      || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+        <path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"></path>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1>QR Code Generator</h1>
+      <p>Type anything, watch it become a code.</p>
+    </div>
+  </div>
+
+  <button type="button" id="themeToggle" class="theme-toggle" aria-label="Switch to dark mode">
+    <svg class="icon icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+    </svg>
+    <svg class="icon icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
+</header>
+
+<main class="layout">
+
+  <!-- ============ Controls ============ -->
+  <section class="panel controls" aria-label="QR code settings">
+    <div class="field">
+      <div class="field-head">
+        <label for="qrText">Content</label>
+        <span class="counter" id="charCount">0</span>
+      </div>
+      <textarea id="qrText" rows="4" spellcheck="false"
+        placeholder="https://example.com — or any text you like"></textarea>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="qrSize">Size</label>
+        <output for="qrSize" id="sizeValue">320 px</output>
+      </div>
+      <input type="range" id="qrSize" min="128" max="1024" step="8" value="320">
+      <div class="range-legend" aria-hidden="true"><span>128</span><span>1024</span></div>
+    </div>
+
+    <div class="field">
+      <label for="ecLevel">Error correction</label>
+      <select id="ecLevel">
+        <option value="L">L — compact, ~7% recoverable</option>
+        <option value="M" selected>M — balanced, ~15% recoverable</option>
+        <option value="Q">Q — robust, ~25% recoverable</option>
+        <option value="H">H — most durable, ~30% recoverable</option>
+      </select>
+      <p class="hint">Higher levels survive smudges and damage, but hold less text.</p>
+    </div>
+
+    <div class="field">
+      <span class="field-label" id="colorsLabel">Colors</span>
+      <div class="color-row" role="group" aria-labelledby="colorsLabel">
+        <div class="color-control">
+          <label for="fgColor">Foreground</label>
+          <div class="color-input-wrap">
+            <input type="color" id="fgColor" value="#101418">
+            <input type="text" id="fgHex" value="#101418" maxlength="7" spellcheck="false"
+                   aria-label="Foreground hex value">
+          </div>
+        </div>
+        <div class="color-control">
+          <label for="bgColor">Background</label>
+          <div class="color-input-wrap">
+            <input type="color" id="bgColor" value="#ffffff">
+            <input type="text" id="bgHex" value="#ffffff" maxlength="7" spellcheck="false"
+                   aria-label="Background hex value">
+          </div>
+        </div>
+      </div>
+      <p class="hint" id="contrastHint">Keep plenty of contrast between the two, or cameras won't read it.</p>
+    </div>
+
+    <div class="actions">
+      <button type="button" id="downloadBtn" class="btn btn-primary" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
+        </svg>
+        Download PNG
+      </button>
+      <button type="button" id="copyBtn" class="btn btn-ghost" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Copy
+      </button>
+      <button type="button" id="resetBtn" class="btn btn-text">Reset colors</button>
+    </div>
+  </section>
+
+  <!-- ============ Preview ============ -->
+  <section class="panel preview" aria-label="QR code preview">
+    <div class="panel-title">
+      <span>Preview</span>
+      <span class="badge" id="metaBadge" hidden></span>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="placeholder" id="placeholder">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+          <path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"></path>
+        </svg>
+        <p>Start typing to generate your code</p>
+      </div>
+      <canvas id="qrCanvas" role="img" aria-label="Generated QR code" hidden></canvas>
+    </div>
+
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Built with plain HTML, CSS &amp; JS — QR encoding by
+    <a href="https://github.com/kazuhikoarase/qrcode-generator" rel="noopener noreferrer" target="_blank">qrcode-generator</a>.
+  </p>
+</footer>
+
+<script src="vendor/qrcode.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
