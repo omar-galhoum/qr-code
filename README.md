@@ -2,6 +2,10 @@
 
 A small QR code generator built with plain HTML, CSS and JavaScript — no build step, no framework, no bundler. Type text, watch the code appear.
 
+## Live demo
+
+Hosted on GitHub Pages: **https://omar-galhoum.github.io/qr-code/**
+
 ## Features
 
 - **Live preview** — the code regenerates as you type (150 ms debounce)

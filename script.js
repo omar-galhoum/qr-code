@@ -140,6 +140,11 @@
     };
   }
 
+  // Blank modules kept around the matrix (the "quiet zone"). Without it cameras
+  // can't find the code's edges, and it lets the code scan while sitting on a
+  // dark page or a dark surface.
+  var QUIET_ZONE = 3;
+
   /**
    * Paint the QR matrix onto a canvas at device resolution.
    * Module boundaries are rounded to integers so adjacent modules
@@ -157,16 +162,17 @@
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, dim, dim);
 
-    var cell = dim / count;
+    // The quiet zone is part of the requested size, so the code shrinks to fit.
+    var cell = dim / (count + QUIET_ZONE * 2);
     ctx.fillStyle = fg;
 
     for (var row = 0; row < count; row++) {
-      var y0 = Math.round(row * cell);
-      var y1 = Math.round((row + 1) * cell);
+      var y0 = Math.round((row + QUIET_ZONE) * cell);
+      var y1 = Math.round((row + QUIET_ZONE + 1) * cell);
       for (var col = 0; col < count; col++) {
         if (!qr.isDark(row, col)) continue;
-        var x0 = Math.round(col * cell);
-        var x1 = Math.round((col + 1) * cell);
+        var x0 = Math.round((col + QUIET_ZONE) * cell);
+        var x1 = Math.round((col + QUIET_ZONE + 1) * cell);
         ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       }
     }
